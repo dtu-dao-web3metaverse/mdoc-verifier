@@ -99,6 +99,7 @@ func parseDeviceResponse(req VerifyRequest, session *Session, sessTrans []byte) 
         var devResp *mdoc.DeviceResponse
         var err error
 
+        // @@ ログ取得処理を追加
         switch req.Protocol {
         case "openid4vp":
                 log.Println("📡 using protocol: openid4vp")
@@ -134,7 +135,7 @@ func parseDeviceResponse(req VerifyRequest, session *Session, sessTrans []byte) 
         }
 
         log.Println("✅ parseDeviceResponse finished successfully")
-        return devResp, nil // @@
+        return devResp, nil
 }
 
 func verifierOptionsForDevelopment(protocol string) []mdoc.VerifierOption {
