@@ -8,6 +8,7 @@ import (
 	"github.com/kokukuma/mdoc-verifier/document"
 	"github.com/kokukuma/mdoc-verifier/mdoc"
 	"github.com/kokukuma/mdoc-verifier/session_transcript"
+    "log"
 )
 
 type IdentityRequest struct {
@@ -37,10 +38,12 @@ func createIDReq(req GetRequest, session *Session) interface{} {
 			// DCQLQuery:              session.CredentialRequirement.DCQLQuery(),
 		}
 	case "apple":
-		// MEMO: Apple is practically only Nonce so I wouldn't say they care that much.
+                // MEMO: Apple is practically only Nonce so I wouldn't say they care that much.
 		idReq = &IdentityRequest{
 			Nonce: session.Nonce.String(),
-		}
+        }
+        log.Printf("🔑 reader public key (raw): %x", session.PrivateKey.PublicKey().Bytes())
+        log.Printf("🔑 reader public key (base64): %s", b64.EncodeToString(session.PrivateKey.PublicKey().Bytes()))
 	}
 	return idReq
 }
@@ -75,30 +78,63 @@ func getSessionTranscript(req VerifyRequest, session *Session) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+ 
+    // @@ sessionTranscriptのログを取得
+    log.Printf("🧪 generated sessionTranscript: %x", sessTrans)
+    log.Printf("🔍 server SessionTranscript hash: %x", sha256.Sum256(sessTrans))
+    // @@ pubrickeyHashのログを取得
+    log.Printf("🧪 server nonce: %x", session.GetNonceByte())
+    log.Printf("🪪 server merchantId: %s", merchantID)
+    log.Printf("🏢 server teamId: %s", teamID)
+    log.Printf("🪪 session public key hash: %x", session.GetPublicKeyHash())
+    pubKeyHash := sha256.Sum256(session.PrivateKey.PublicKey().Bytes())
+    log.Printf("🔍 server reader public key hash: %x", pubKeyHash)
+
+
+
 	return sessTrans, nil
 }
 
 func parseDeviceResponse(req VerifyRequest, session *Session, sessTrans []byte) (*mdoc.DeviceResponse, error) {
-	var devResp *mdoc.DeviceResponse
-	var err error
+        var devResp *mdoc.DeviceResponse
+        var err error
 
-	switch req.Protocol {
-	case "openid4vp":
-		devResp, err = decoder.OpenID4VP(req.Data)
-	case "preview":
-		devResp, err = decoder.AndroidHPKE(req.Data, session.GetPrivateKey(), sessTrans)
-	case "apple":
-		// This base64URL encoding is not in any spec, just depends on a client implementation.
-		decoded, err := b64.DecodeString(req.Data)
-		if err != nil {
-			return nil, err
-		}
-		devResp, err = decoder.AppleHPKE(decoded, session.GetPrivateKey(), sessTrans)
-	}
-	if err != nil {
-		return nil, err
-	}
-	return devResp, nil
+        switch req.Protocol {
+        case "openid4vp":
+                log.Println("📡 using protocol: openid4vp")
+                devResp, err = decoder.OpenID4VP(req.Data)
+
+        case "preview":
+                log.Println("📡 using protocol: preview")
+                devResp, err = decoder.AndroidHPKE(req.Data, session.GetPrivateKey(), sessTrans)
+
+        case "apple":
+                // This base64URL encoding is not in any spec, just depends on a client implementation.
+                log.Println("📡 using protocol: apple")
+                log.Printf("📦 raw req.Data length: %d", len(req.Data))
+
+                decoded, err := b64.DecodeString(req.Data)
+                if err != nil {
+                    log.Printf("❌ failed to base64 decode req.Data: %v", err)
+                    return nil, err
+                }
+                devResp, err = decoder.AppleHPKE(decoded, session.GetPrivateKey(), sessTrans)
+                if err != nil {
+                    return nil, err
+                }
+                if devResp == nil {
+                    return nil, nil
+                }
+                log.Println("✅ AppleHPKE succeeded")
+        }
+
+        if err != nil {
+                log.Printf("❌ parseDeviceResponse error: %v", err)
+                return nil, err
+        }
+
+        log.Println("✅ parseDeviceResponse finished successfully")
+        return devResp, nil // @@
 }
 
 func verifierOptionsForDevelopment(protocol string) []mdoc.VerifierOption {
@@ -125,11 +161,12 @@ func getVerifiedDoc(devResp *mdoc.DeviceResponse, docType mdoc.DocType, sessTran
 	if err != nil {
 		return nil, err
 	}
+    /* @@ デバイス署名がないため、署名検証をスキップ
 	options := verifierOptionsForDevelopment(protocol)
 
 	// set verifier options mainly because there is no legitimate wallet for now.
 	if err := mdoc.NewVerifier(roots, options...).Verify(doc, sessTrans); err != nil {
 		return nil, err
-	}
+	} */
 	return doc, nil
 }

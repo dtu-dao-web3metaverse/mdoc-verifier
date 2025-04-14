@@ -170,6 +170,12 @@ func (s *Server) GetIdentityRequest(w http.ResponseWriter, r *http.Request) {
 		jsonErrorResponse(w, fmt.Errorf("failed to parse request: %v", err), http.StatusBadRequest)
 		return
 	}
+ 
+    // @@ protcolがappleの場合だけ、merchantIdに紐づく鍵を環境変数に格納
+        if req.Protocol == "apple" {
+        os.Setenv("APPLE_MERCHANT_ENCRYPTION_PRIVATE_KEY_PATH", "decoder/testdata/merchant_encryption.key")
+        applePrivateKeyPath = os.Getenv("APPLE_MERCHANT_ENCRYPTION_PRIVATE_KEY_PATH")
+    }
 
 	credReq, err := CredentialRequirement(req.Attributes)
 	if err != nil {
