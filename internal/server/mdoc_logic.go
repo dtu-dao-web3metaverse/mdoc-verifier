@@ -42,6 +42,7 @@ func createIDReq(req GetRequest, session *Session) interface{} {
 		idReq = &IdentityRequest{
 			Nonce: session.Nonce.String(),
         }
+        // @@ ログ取得処理を追加
         log.Printf("🔑 reader public key (raw): %x", session.PrivateKey.PublicKey().Bytes())
         log.Printf("🔑 reader public key (base64): %s", b64.EncodeToString(session.PrivateKey.PublicKey().Bytes()))
 	}
@@ -79,10 +80,9 @@ func getSessionTranscript(req VerifyRequest, session *Session) ([]byte, error) {
 		return nil, err
 	}
  
-    // @@ sessionTranscriptのログを取得
+    // @@ sessionTranscriptHash,readerPublicKeyHashのログ取得処理を追加
     log.Printf("🧪 generated sessionTranscript: %x", sessTrans)
     log.Printf("🔍 server SessionTranscript hash: %x", sha256.Sum256(sessTrans))
-    // @@ pubrickeyHashのログを取得
     log.Printf("🧪 server nonce: %x", session.GetNonceByte())
     log.Printf("🪪 server merchantId: %s", merchantID)
     log.Printf("🏢 server teamId: %s", teamID)
@@ -99,7 +99,7 @@ func parseDeviceResponse(req VerifyRequest, session *Session, sessTrans []byte) 
         var devResp *mdoc.DeviceResponse
         var err error
 
-        // @@ ログ取得処理を追加
+        // @@ プロトコルに応じたログ取得処理を追加
         switch req.Protocol {
         case "openid4vp":
                 log.Println("📡 using protocol: openid4vp")
@@ -162,7 +162,7 @@ func getVerifiedDoc(devResp *mdoc.DeviceResponse, docType mdoc.DocType, sessTran
 	if err != nil {
 		return nil, err
 	}
-    /* @@ デバイス署名がないため、署名検証をスキップ
+    /* @@ Issuer署名がないため、署名検証をスキップ
 	options := verifierOptionsForDevelopment(protocol)
 
 	// set verifier options mainly because there is no legitimate wallet for now.
