@@ -114,7 +114,7 @@ func parseDeviceResponse(req VerifyRequest, session *Session, sessTrans []byte) 
                 log.Println("📡 using protocol: apple")
                 log.Printf("📦 raw req.Data length: %d", len(req.Data))
 
-                decoded, err := b64.DecodeString(req.Data)
+                decoded, err := base64.RawURLEncoding.DecodeString(req.Data)
                 if err != nil {
                     log.Printf("❌ failed to base64 decode req.Data: %v", err)
                     return nil, err
