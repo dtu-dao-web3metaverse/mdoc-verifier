@@ -9,6 +9,7 @@ import (
 	"github.com/kokukuma/mdoc-verifier/mdoc"
 	"github.com/kokukuma/mdoc-verifier/session_transcript"
     "log"
+    "encoding/base64"
 )
 
 type IdentityRequest struct {

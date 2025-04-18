@@ -239,19 +239,37 @@ func (s *Server) VerifyIdentityResponse(w http.ResponseWriter, r *http.Request) 
 			continue
 		}
 
-		for _, elemName := range cred.ElementIdentifier {
-			elemValue, err := doc.GetElementValue(cred.Namespace, elemName)
-			if err != nil {
-				log.Printf("element not found: %s: %v", elemName, err)
-				continue
-			}
-			resp.Elements = append(resp.Elements, Element{
-				NameSpace:  cred.Namespace,
-				Identifier: elemName,
-				Value:      elemValue,
-			})
-			log.Printf("element name=%s, value=%s", elemName, elemValue)
-		}
+      // IssuerSigned elements
+        for _, ns := range doc.IssuerSigned.GetNameSpaces() {
+            items, err := doc.IssuerSigned.GetIssuerSignedItems(ns)
+            if err != nil {
+                log.Printf("Failed to get IssuerSignedItems for namespace=%s: %v", ns, err)
+                continue
+            }
+            for _, item := range items {
+                resp.Elements = append(resp.Elements, Element{
+                    NameSpace:  ns,
+                    Identifier: item.ElementIdentifier,
+                    Value:      item.ElementValue,
+                })
+            }
+        }
+
+        // DeviceSigned elements
+        deviceNS, err := doc.DeviceSigned.DeviceNameSpaces()
+        if err != nil {
+            log.Printf("Failed to get DeviceSigned namespaces: %v", err)
+        } else {
+            for ns, items := range deviceNS {
+                for id, val := range items {
+                    resp.Elements = append(resp.Elements, Element{
+                        NameSpace:  ns,
+                        Identifier: id,
+                        Value:      val,
+                    })
+                }
+            }
+        }
 	}
 
 	jsonResponse(w, resp, http.StatusOK)
