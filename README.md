@@ -1,9 +1,9 @@
-### 2025/05/19追記
-起動コマンド
-export SERVER_DOMAIN=localhost:8080;
-export CLIENT_DOMAIN=localhost:8081;
-make run
-
+## 2025/05/19追記
+### 起動コマンド  
+export SERVER_DOMAIN=localhost:8080;  
+export CLIENT_DOMAIN=localhost:8081;  
+make run  
+  
 （URLを外部に公開する場合、ターミナルの別ウインドウで）
 make ngrok
 
