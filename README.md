@@ -1,4 +1,5 @@
-### 起動コマンド
+### 2025/05/19追記
+起動コマンド
 export SERVER_DOMAIN=localhost:8080;
 export CLIENT_DOMAIN=localhost:8081;
 make run
